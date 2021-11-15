@@ -152,7 +152,9 @@ impl<T> GenerationalIndexList<T> {
                     next: Some(item_id_following_after),
                 });
 
-                let (after_item, item_following_after) = self.arena.get2_mut(after.index, item_id_following_after.index);
+                let (after_item, item_following_after) = self
+                    .arena
+                    .get2_mut(after.index, item_id_following_after.index);
 
                 after_item.unwrap().next = Some(ret);
                 item_following_after.unwrap().previous = Some(ret);
@@ -166,7 +168,11 @@ impl<T> GenerationalIndexList<T> {
         self.insert_after_with(after, |_| data)
     }
 
-    pub fn insert_before_with(&mut self, before: ItemId, create: impl FnOnce(ItemId) -> T) -> ItemId {
+    pub fn insert_before_with(
+        &mut self,
+        before: ItemId,
+        create: impl FnOnce(ItemId) -> T,
+    ) -> ItemId {
         assert!(!self.is_empty());
 
         let item_id_preceding_before = self.arena.get(before.index).unwrap().previous;
@@ -181,7 +187,9 @@ impl<T> GenerationalIndexList<T> {
                     next: Some(before),
                 });
 
-                let (before_item, item_preceding_before) = self.arena.get2_mut(before.index, item_id_preceding_before.index);
+                let (before_item, item_preceding_before) = self
+                    .arena
+                    .get2_mut(before.index, item_id_preceding_before.index);
 
                 before_item.unwrap().previous = Some(ret);
                 item_preceding_before.unwrap().next = Some(ret);
@@ -203,13 +211,17 @@ impl<T> GenerationalIndexList<T> {
     }
 }
 
-pub struct Iter<'a, T> where T: 'a {
+pub struct Iter<'a, T>
+where
+    T: 'a,
+{
     list: &'a GenerationalIndexList<T>,
     next_item: Option<ItemId>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T>
-    where T: 'a
+where
+    T: 'a,
 {
     type Item = &'a T;
 
