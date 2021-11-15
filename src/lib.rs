@@ -66,15 +66,7 @@ impl<T> GenerationalIndexList<T> {
     }
 
     fn push_only_item(&mut self, data: T) -> ItemId {
-        assert!(self.is_empty());
-        let id = self.new_node(Item {
-            data,
-            previous: None,
-            next: None,
-        });
-        self.head = Some(id);
-        self.tail = Some(id);
-        return id;
+        self.push_only_item_with(|_| data)
     }
 
     fn push_only_item_with(&mut self, create: impl FnOnce(ItemId) -> T) -> ItemId {
@@ -90,8 +82,7 @@ impl<T> GenerationalIndexList<T> {
     }
 
     fn new_node(&mut self, node: Item<T>) -> ItemId {
-        let index = self.arena.insert(node);
-        ItemId { index }
+        self.new_node_with(|_| node)
     }
 
     fn new_node_with(&mut self, create: impl FnOnce(ItemId) -> Item<T>) -> ItemId {
@@ -120,32 +111,17 @@ impl<T> GenerationalIndexList<T> {
     }
 
     pub fn push_back(&mut self, data: T) -> ItemId {
-        if self.head.is_none() {
-            return self.push_only_item(data);
-        }
-
-        let old_tail = self.tail.unwrap();
-        let ret = self.new_node(Item {
-            data,
-            previous: Some(old_tail),
-            next: None,
-        });
-
-        // Fixup old tail
-        self.arena.get_mut(old_tail.index).unwrap().next = Some(ret);
-
-        self.tail = Some(ret);
-        ret
+        self.push_back_with(|_| data)
     }
 
-    pub fn push_front(&mut self, data: T) -> ItemId {
+    pub fn push_front_with(&mut self, create: impl FnOnce(ItemId) -> T) -> ItemId {
         if self.head.is_none() {
-            return self.push_only_item(data);
+            return self.push_only_item_with(create);
         }
 
         let old_head = self.head.unwrap();
-        let ret = self.new_node(Item {
-            data,
+        let ret = self.new_node_with(|id| Item {
+            data: create(id),
             previous: None,
             next: Some(old_head),
         });
@@ -155,6 +131,68 @@ impl<T> GenerationalIndexList<T> {
 
         self.head = Some(ret);
         ret
+    }
+
+    pub fn push_front(&mut self, data: T) -> ItemId {
+        self.push_front_with(|_| data)
+    }
+
+    pub fn insert_after_with(&mut self, after: ItemId, create: impl FnOnce(ItemId) -> T) -> ItemId {
+        assert!(!self.is_empty());
+
+        let item_id_following_after = self.arena.get(after.index).unwrap().next;
+        match item_id_following_after {
+            // `after` is in tail position
+            None => self.push_back_with(create),
+            Some(item_id_following_after) => {
+                // `after` is not in tail position, which means we are inserting between two items
+                let ret = self.new_node_with(|id| Item {
+                    data: create(id),
+                    previous: Some(after),
+                    next: Some(item_id_following_after),
+                });
+
+                let (after_item, item_following_after) = self.arena.get2_mut(after.index, item_id_following_after.index);
+
+                after_item.unwrap().next = Some(ret);
+                item_following_after.unwrap().previous = Some(ret);
+
+                ret
+            }
+        }
+    }
+
+    pub fn insert_after(&mut self, after: ItemId, data: T) -> ItemId {
+        self.insert_after_with(after, |_| data)
+    }
+
+    pub fn insert_before_with(&mut self, before: ItemId, create: impl FnOnce(ItemId) -> T) -> ItemId {
+        assert!(!self.is_empty());
+
+        let item_id_preceding_before = self.arena.get(before.index).unwrap().previous;
+        match item_id_preceding_before {
+            // `before` is in head position
+            None => self.push_front_with(create),
+            Some(item_id_preceding_before) => {
+                // `before` is not in head position, which means we are inserting between two items
+                let ret = self.new_node_with(|id| Item {
+                    data: create(id),
+                    previous: Some(item_id_preceding_before),
+                    next: Some(before),
+                });
+
+                let (before_item, item_preceding_before) = self.arena.get2_mut(before.index, item_id_preceding_before.index);
+
+                before_item.unwrap().previous = Some(ret);
+                item_preceding_before.unwrap().next = Some(ret);
+
+                ret
+            }
+        }
+    }
+
+    pub fn insert_before(&mut self, before: ItemId, data: T) -> ItemId {
+        self.insert_before_with(before, |_| data)
     }
 
     fn iter(&self) -> Iter<T> {
