@@ -48,6 +48,47 @@ impl<T> GenerationalIndexList<T> {
         self.tail = None;
     }
 
+    pub fn remove(&mut self, id: ItemId) -> Option<T> {
+        let item = self.arena.remove(id.index)?;
+
+        if self.head == Some(id) && self.tail == Some(id) {
+            // This was the only item in the list
+            self.head = None;
+            self.tail = None;
+        } else if self.head == Some(id) {
+            // This was the head and there is another item after us, so make it the new head
+            let next_id = item.next.unwrap();
+            let next = self.arena.get_mut(next_id.index).unwrap();
+            next.previous = None;
+            self.head = Some(next_id);
+        } else if self.tail == Some(id) {
+            // This was the head and there is another item before us, so make it the new tail
+            let prev_id = item.previous.unwrap();
+            let prev = self.arena.get_mut(prev_id.index).unwrap();
+            prev.next = None;
+            self.tail = Some(prev_id);
+        } else {
+            // We were somewhere in the middle
+            let next_id = item.next.unwrap();
+            let prev_id = item.previous.unwrap();
+
+            let (next, prev) = self.arena.get2_mut(next_id.index, prev_id.index);
+
+            next.unwrap().previous = Some(prev_id);
+            prev.unwrap().next = Some(next_id);
+        }
+
+        Some(item.data)
+    }
+
+    pub fn len(&self) -> usize {
+        self.arena.len()
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.arena.capacity()
+    }
+
     pub fn get(&self, id: ItemId) -> Option<&T> {
         self.arena.get(id.index).map(|i| &i.data)
     }
