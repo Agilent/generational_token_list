@@ -246,6 +246,37 @@ impl<T> GenerationalIndexList<T> {
             next_item: self.head,
         }
     }
+
+    fn iter_mut(&mut self) -> IterMut<T> {
+        IterMut {
+            list: &mut self,
+            next_item: self.head,
+        }
+    }
+}
+
+pub struct IterMut<'a, T>
+where
+    T: 'a,
+{
+    list: &'a mut GenerationalIndexList<T>,
+    next_item: Option<ItemId>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T>
+where
+    T: 'a,
+{
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_item = self.next_item?;
+
+        self.list.arena.get_mut(next_item.index).map(|i| {
+            self.next_item = i.next;
+            unsafe { &mut *(&mut i.data as *mut T) }
+        })
+    }
 }
 
 pub struct Iter<'a, T>
