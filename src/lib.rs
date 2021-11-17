@@ -106,10 +106,6 @@ impl<T> GenerationalIndexList<T> {
         self.arena.is_empty()
     }
 
-    fn push_only_item(&mut self, data: T) -> ItemId {
-        self.push_only_item_with(|_| data)
-    }
-
     fn push_only_item_with(&mut self, create: impl FnOnce(ItemId) -> T) -> ItemId {
         assert!(self.is_empty());
         let id = self.new_node_with(|id| Item {
