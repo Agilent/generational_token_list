@@ -13,21 +13,21 @@ pub struct ItemToken {
 }
 
 #[derive(Debug)]
-pub struct GenerationalIndexList<T> {
+pub struct GenerationalTokenList<T> {
     arena: Arena<Item<T>>,
     head: Option<ItemToken>,
     tail: Option<ItemToken>,
 }
 
-impl<T> Default for GenerationalIndexList<T> {
+impl<T> Default for GenerationalTokenList<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> GenerationalIndexList<T> {
+impl<T> GenerationalTokenList<T> {
     pub fn new() -> Self {
-        GenerationalIndexList {
+        GenerationalTokenList {
             arena: Arena::new(),
             head: None,
             tail: None,
@@ -35,7 +35,7 @@ impl<T> GenerationalIndexList<T> {
     }
 
     pub fn with_capacity(n: usize) -> Self {
-        GenerationalIndexList {
+        GenerationalTokenList {
             arena: Arena::with_capacity(n),
             head: None,
             tail: None,
@@ -260,7 +260,7 @@ pub struct IterMut<'a, T>
 where
     T: 'a,
 {
-    list: &'a mut GenerationalIndexList<T>,
+    list: &'a mut GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
@@ -284,7 +284,7 @@ pub struct Iter<'a, T>
 where
     T: 'a,
 {
-    list: &'a GenerationalIndexList<T>,
+    list: &'a GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
@@ -305,11 +305,11 @@ where
 }
 
 pub struct IntoIter<T> {
-    list: GenerationalIndexList<T>,
+    list: GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
-impl<T> IntoIterator for GenerationalIndexList<T> {
+impl<T> IntoIterator for GenerationalTokenList<T> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
@@ -338,11 +338,11 @@ impl<T> Iterator for IntoIter<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::GenerationalIndexList;
+    use crate::GenerationalTokenList;
 
     #[test]
     fn basic() {
-        let mut list = GenerationalIndexList::<i32>::new();
+        let mut list = GenerationalTokenList::<i32>::new();
         let item1 = list.push_back(10);
         let item2 = list.push_back(20);
         let item3 = list.push_back(30);
@@ -353,7 +353,7 @@ mod tests {
 
     #[test]
     fn into_iter() {
-        let mut list = GenerationalIndexList::<i32>::new();
+        let mut list = GenerationalTokenList::<i32>::new();
         let item1 = list.push_back(10);
         let item2 = list.push_back(20);
         let item3 = list.push_back(30);
