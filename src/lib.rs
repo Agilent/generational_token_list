@@ -42,6 +42,30 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
+    pub fn head(&self) -> Option<&T> {
+        self.head.map(|token| self.get(token).unwrap())
+    }
+
+    pub fn head_mut(&mut self) -> Option<&mut T> {
+        self.head.map(|token| self.get_mut(token).unwrap())
+    }
+
+    pub fn tail(&self) -> Option<&T> {
+        self.tail.map(|token| self.get(token).unwrap())
+    }
+
+    pub fn tail_mut(&mut self) -> Option<&mut T> {
+        self.tail.map(|token| self.get_mut(token).unwrap())
+    }
+
+    pub fn head_token(&self) -> Option<ItemToken> {
+        self.head
+    }
+
+    pub fn tail_token(&self) -> Option<ItemToken> {
+        self.tail
+    }
+
     pub fn clear(&mut self) {
         self.arena.clear();
         self.head = None;
@@ -79,6 +103,14 @@ impl<T> GenerationalTokenList<T> {
         }
 
         Some(item.data)
+    }
+
+    pub fn pop_front(&mut self) -> Option<T> {
+        self.head.map(|token| self.remove(token))
+    }
+
+    pub fn pop_back(&mut self) -> Option<T> {
+        self.tail.map(|token| self.remove(token))
     }
 
     pub fn len(&self) -> usize {
@@ -254,6 +286,16 @@ impl<T> GenerationalTokenList<T> {
             next_item: head,
         }
     }
+
+    pub fn next_token(&self, token: ItemToken) -> Option<ItemToken> {
+        // TODO: unwrap OK?
+        self.arena.get(token.index).unwrap().next
+    }
+
+    pub fn prev_token(&self, token: ItemToken) -> Option<ItemToken> {
+        // TODO: unwrap OK?
+        self.arena.get(token.index).unwrap().previous
+    }
 }
 
 pub struct IterMut<'a, T>
@@ -333,6 +375,22 @@ impl<T> Iterator for IntoIter<T> {
             self.next_item = item.next;
             item.data
         })
+    }
+}
+
+impl<T> GenerationalTokenList<T>
+where
+    T: PartialEq,
+{
+    pub fn contains(&self, value: &T) -> bool {
+        self.iter().any(|v| v == value)
+    }
+
+    pub fn find_token(&self, value: &T) -> Option<ItemToken> {
+        self.arena
+            .iter()
+            .find(|item| &(*item).1.data == value)
+            .map(|(index, _)| ItemToken { index })
     }
 }
 
