@@ -3,20 +3,20 @@ use generational_arena::{Arena, Index};
 #[derive(Debug)]
 struct Item<T> {
     data: T,
-    previous: Option<ItemId>,
-    next: Option<ItemId>,
+    previous: Option<ItemToken>,
+    next: Option<ItemToken>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ItemId {
+pub struct ItemToken {
     index: Index,
 }
 
 #[derive(Debug)]
 pub struct GenerationalIndexList<T> {
     arena: Arena<Item<T>>,
-    head: Option<ItemId>,
-    tail: Option<ItemId>,
+    head: Option<ItemToken>,
+    tail: Option<ItemToken>,
 }
 
 impl<T> Default for GenerationalIndexList<T> {
@@ -48,34 +48,34 @@ impl<T> GenerationalIndexList<T> {
         self.tail = None;
     }
 
-    pub fn remove(&mut self, id: ItemId) -> Option<T> {
-        let item = self.arena.remove(id.index)?;
+    pub fn remove(&mut self, token: ItemToken) -> Option<T> {
+        let item = self.arena.remove(token.index)?;
 
-        if self.head == Some(id) && self.tail == Some(id) {
+        if self.head == Some(token) && self.tail == Some(token) {
             // This was the only item in the list
             self.head = None;
             self.tail = None;
-        } else if self.head == Some(id) {
+        } else if self.head == Some(token) {
             // This was the head and there is another item after us, so make it the new head
-            let next_id = item.next.unwrap();
-            let next = self.arena.get_mut(next_id.index).unwrap();
+            let next_token = item.next.unwrap();
+            let next = self.arena.get_mut(next_token.index).unwrap();
             next.previous = None;
-            self.head = Some(next_id);
-        } else if self.tail == Some(id) {
+            self.head = Some(next_token);
+        } else if self.tail == Some(token) {
             // This was the head and there is another item before us, so make it the new tail
-            let prev_id = item.previous.unwrap();
-            let prev = self.arena.get_mut(prev_id.index).unwrap();
+            let prev_token = item.previous.unwrap();
+            let prev = self.arena.get_mut(prev_token.index).unwrap();
             prev.next = None;
-            self.tail = Some(prev_id);
+            self.tail = Some(prev_token);
         } else {
-            // We were somewhere in the middle
-            let next_id = item.next.unwrap();
-            let prev_id = item.previous.unwrap();
+            // We were somewhere in the mtokendle
+            let next_token = item.next.unwrap();
+            let prev_token = item.previous.unwrap();
 
-            let (next, prev) = self.arena.get2_mut(next_id.index, prev_id.index);
+            let (next, prev) = self.arena.get2_mut(next_token.index, prev_token.index);
 
-            next.unwrap().previous = Some(prev_id);
-            prev.unwrap().next = Some(next_id);
+            next.unwrap().previous = Some(prev_token);
+            prev.unwrap().next = Some(next_token);
         }
 
         Some(item.data)
@@ -89,16 +89,16 @@ impl<T> GenerationalIndexList<T> {
         self.arena.capacity()
     }
 
-    pub fn get(&self, id: ItemId) -> Option<&T> {
-        self.arena.get(id.index).map(|i| &i.data)
+    pub fn get(&self, token: ItemToken) -> Option<&T> {
+        self.arena.get(token.index).map(|i| &i.data)
     }
 
-    pub fn get_mut(&mut self, id: ItemId) -> Option<&mut T> {
-        self.arena.get_mut(id.index).map(|i| &mut i.data)
+    pub fn get_mut(&mut self, token: ItemToken) -> Option<&mut T> {
+        self.arena.get_mut(token.index).map(|i| &mut i.data)
     }
 
-    pub fn get2_mut(&mut self, id1: ItemId, id2: ItemId) -> (Option<&mut T>, Option<&mut T>) {
-        let (item1, item2) = self.arena.get2_mut(id1.index, id2.index);
+    pub fn get2_mut(&mut self, token1: ItemToken, token2: ItemToken) -> (Option<&mut T>, Option<&mut T>) {
+        let (item1, item2) = self.arena.get2_mut(token1.index, token2.index);
         (item1.map(|i| &mut i.data), item2.map(|i| &mut i.data))
     }
 
@@ -106,36 +106,36 @@ impl<T> GenerationalIndexList<T> {
         self.arena.is_empty()
     }
 
-    fn push_only_item_with(&mut self, create: impl FnOnce(ItemId) -> T) -> ItemId {
+    fn push_only_item_with(&mut self, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
         assert!(self.is_empty());
-        let id = self.new_node_with(|id| Item {
-            data: create(id),
+        let token = self.new_node_with(|token| Item {
+            data: create(token),
             previous: None,
             next: None,
         });
-        self.head = Some(id);
-        self.tail = Some(id);
-        return id;
+        self.head = Some(token);
+        self.tail = Some(token);
+        return token;
     }
 
-    fn new_node(&mut self, node: Item<T>) -> ItemId {
+    fn new_node(&mut self, node: Item<T>) -> ItemToken {
         self.new_node_with(|_| node)
     }
 
-    fn new_node_with(&mut self, create: impl FnOnce(ItemId) -> Item<T>) -> ItemId {
-        let index = self.arena.insert_with(|index| create(ItemId { index }));
-        ItemId { index }
+    fn new_node_with(&mut self, create: impl FnOnce(ItemToken) -> Item<T>) -> ItemToken {
+        let index = self.arena.insert_with(|index| create(ItemToken { index }));
+        ItemToken { index }
     }
 
-    pub fn push_back_with(&mut self, create: impl FnOnce(ItemId) -> T) -> ItemId {
+    pub fn push_back_with(&mut self, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
         if self.head.is_none() {
             return self.push_only_item_with(create);
         }
 
         let old_tail = self.tail.unwrap();
 
-        let ret = self.new_node_with(|id| Item {
-            data: create(id),
+        let ret = self.new_node_with(|token| Item {
+            data: create(token),
             previous: Some(old_tail),
             next: None,
         });
@@ -147,18 +147,18 @@ impl<T> GenerationalIndexList<T> {
         ret
     }
 
-    pub fn push_back(&mut self, data: T) -> ItemId {
+    pub fn push_back(&mut self, data: T) -> ItemToken {
         self.push_back_with(|_| data)
     }
 
-    pub fn push_front_with(&mut self, create: impl FnOnce(ItemId) -> T) -> ItemId {
+    pub fn push_front_with(&mut self, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
         if self.head.is_none() {
             return self.push_only_item_with(create);
         }
 
         let old_head = self.head.unwrap();
-        let ret = self.new_node_with(|id| Item {
-            data: create(id),
+        let ret = self.new_node_with(|token| Item {
+            data: create(token),
             previous: None,
             next: Some(old_head),
         });
@@ -170,28 +170,28 @@ impl<T> GenerationalIndexList<T> {
         ret
     }
 
-    pub fn push_front(&mut self, data: T) -> ItemId {
+    pub fn push_front(&mut self, data: T) -> ItemToken {
         self.push_front_with(|_| data)
     }
 
-    pub fn insert_after_with(&mut self, after: ItemId, create: impl FnOnce(ItemId) -> T) -> ItemId {
+    pub fn insert_after_with(&mut self, after: ItemToken, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
         assert!(!self.is_empty());
 
-        let item_id_following_after = self.arena.get(after.index).unwrap().next;
-        match item_id_following_after {
+        let item_token_following_after = self.arena.get(after.index).unwrap().next;
+        match item_token_following_after {
             // `after` is in tail position
             None => self.push_back_with(create),
-            Some(item_id_following_after) => {
+            Some(item_token_following_after) => {
                 // `after` is not in tail position, which means we are inserting between two items
-                let ret = self.new_node_with(|id| Item {
-                    data: create(id),
+                let ret = self.new_node_with(|token| Item {
+                    data: create(token),
                     previous: Some(after),
-                    next: Some(item_id_following_after),
+                    next: Some(item_token_following_after),
                 });
 
                 let (after_item, item_following_after) = self
                     .arena
-                    .get2_mut(after.index, item_id_following_after.index);
+                    .get2_mut(after.index, item_token_following_after.index);
 
                 after_item.unwrap().next = Some(ret);
                 item_following_after.unwrap().previous = Some(ret);
@@ -201,32 +201,32 @@ impl<T> GenerationalIndexList<T> {
         }
     }
 
-    pub fn insert_after(&mut self, after: ItemId, data: T) -> ItemId {
+    pub fn insert_after(&mut self, after: ItemToken, data: T) -> ItemToken {
         self.insert_after_with(after, |_| data)
     }
 
     pub fn insert_before_with(
         &mut self,
-        before: ItemId,
-        create: impl FnOnce(ItemId) -> T,
-    ) -> ItemId {
+        before: ItemToken,
+        create: impl FnOnce(ItemToken) -> T,
+    ) -> ItemToken {
         assert!(!self.is_empty());
 
-        let item_id_preceding_before = self.arena.get(before.index).unwrap().previous;
-        match item_id_preceding_before {
+        let item_token_preceding_before = self.arena.get(before.index).unwrap().previous;
+        match item_token_preceding_before {
             // `before` is in head position
             None => self.push_front_with(create),
-            Some(item_id_preceding_before) => {
+            Some(item_token_preceding_before) => {
                 // `before` is not in head position, which means we are inserting between two items
-                let ret = self.new_node_with(|id| Item {
-                    data: create(id),
-                    previous: Some(item_id_preceding_before),
+                let ret = self.new_node_with(|token| Item {
+                    data: create(token),
+                    previous: Some(item_token_preceding_before),
                     next: Some(before),
                 });
 
                 let (before_item, item_preceding_before) = self
                     .arena
-                    .get2_mut(before.index, item_id_preceding_before.index);
+                    .get2_mut(before.index, item_token_preceding_before.index);
 
                 before_item.unwrap().previous = Some(ret);
                 item_preceding_before.unwrap().next = Some(ret);
@@ -236,7 +236,7 @@ impl<T> GenerationalIndexList<T> {
         }
     }
 
-    pub fn insert_before(&mut self, before: ItemId, data: T) -> ItemId {
+    pub fn insert_before(&mut self, before: ItemToken, data: T) -> ItemToken {
         self.insert_before_with(before, |_| data)
     }
 
@@ -261,7 +261,7 @@ where
     T: 'a,
 {
     list: &'a mut GenerationalIndexList<T>,
-    next_item: Option<ItemId>,
+    next_item: Option<ItemToken>,
 }
 
 impl<'a, T> Iterator for IterMut<'a, T>
@@ -285,7 +285,7 @@ where
     T: 'a,
 {
     list: &'a GenerationalIndexList<T>,
-    next_item: Option<ItemId>,
+    next_item: Option<ItemToken>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T>
@@ -306,7 +306,7 @@ where
 
 pub struct IntoIter<T> {
     list: GenerationalIndexList<T>,
-    next_item: Option<ItemId>,
+    next_item: Option<ItemToken>,
 }
 
 impl<T> IntoIterator for GenerationalIndexList<T> {
