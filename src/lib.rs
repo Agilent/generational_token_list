@@ -1,7 +1,7 @@
 use generational_arena::{Arena, Index};
 
 #[derive(Debug)]
-pub struct Item<T> {
+struct Item<T> {
     data: T,
     previous: Option<ItemId>,
     next: Option<ItemId>,
