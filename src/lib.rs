@@ -92,7 +92,7 @@ impl<T> GenerationalTokenList<T> {
             prev.next = None;
             self.tail = Some(prev_token);
         } else {
-            // We were somewhere in the mtokendle
+            // We were somewhere in the middle
             let next_token = item.next.unwrap();
             let prev_token = item.previous.unwrap();
 
