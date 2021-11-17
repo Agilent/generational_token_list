@@ -129,7 +129,11 @@ impl<T> GenerationalTokenList<T> {
         self.arena.get_mut(token.index).map(|i| &mut i.data)
     }
 
-    pub fn get2_mut(&mut self, token1: ItemToken, token2: ItemToken) -> (Option<&mut T>, Option<&mut T>) {
+    pub fn get2_mut(
+        &mut self,
+        token1: ItemToken,
+        token2: ItemToken,
+    ) -> (Option<&mut T>, Option<&mut T>) {
         let (item1, item2) = self.arena.get2_mut(token1.index, token2.index);
         (item1.map(|i| &mut i.data), item2.map(|i| &mut i.data))
     }
@@ -206,7 +210,11 @@ impl<T> GenerationalTokenList<T> {
         self.push_front_with(|_| data)
     }
 
-    pub fn insert_after_with(&mut self, after: ItemToken, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
+    pub fn insert_after_with(
+        &mut self,
+        after: ItemToken,
+        create: impl FnOnce(ItemToken) -> T,
+    ) -> ItemToken {
         assert!(!self.is_empty());
 
         let item_token_following_after = self.arena.get(after.index).unwrap().next;
