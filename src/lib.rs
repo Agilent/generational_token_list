@@ -242,15 +242,16 @@ impl<T> GenerationalIndexList<T> {
 
     fn iter(&self) -> Iter<T> {
         Iter {
-            list: &self,
+            list: self,
             next_item: self.head,
         }
     }
 
     fn iter_mut(&mut self) -> IterMut<T> {
+        let head = self.head;
         IterMut {
-            list: &mut self,
-            next_item: self.head,
+            list: self,
+            next_item: head,
         }
     }
 }
