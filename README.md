@@ -47,7 +47,8 @@ The only usage of `unsafe` is in the implementation of `iter_mut`. I don't think
 Pull requests are welcome :)
 
 - Implement `Index` and `IndexMut` traits
-- Add `no-std` support?
+- Add `no-std` support?'
+- Consider adding `#[inline]` to some methods?
 
 ## Disclaimer
 This is not an official Agilent product. No support is implied.

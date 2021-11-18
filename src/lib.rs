@@ -1,6 +1,7 @@
 use generational_arena::{Arena, Index};
 
 #[derive(Debug)]
+#[cfg_attr(test, derive(PartialEq, Eq))]
 struct Item<T> {
     data: T,
     previous: Option<ItemToken>,
@@ -187,6 +188,7 @@ impl<T> GenerationalTokenList<T> {
     /// ```
     /// # use generational_indexlist::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
+    /// assert_eq!(list.head_token(), None);
     /// let head = list.push_back(1);
     /// list.push_back(2);
     /// list.push_back(3);
@@ -202,6 +204,7 @@ impl<T> GenerationalTokenList<T> {
     /// ```
     /// # use generational_indexlist::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
+    /// assert_eq!(list.tail_token(), None);
     /// list.push_back(1);
     /// list.push_back(2);
     /// let tail = list.push_back(3);
@@ -279,7 +282,6 @@ impl<T> GenerationalTokenList<T> {
 
         Some(item.data)
     }
-
 
     /// Remove first (head) item from the list and return it. Any tokens pointing to head are invalidated.
     /// Returns `None` if the list is empty.
@@ -803,16 +805,16 @@ impl<T> GenerationalTokenList<T> {
 }
 
 pub struct IterMut<'a, T>
-    where
-        T: 'a,
+where
+    T: 'a,
 {
     list: &'a mut GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
 impl<'a, T> Iterator for IterMut<'a, T>
-    where
-        T: 'a,
+where
+    T: 'a,
 {
     type Item = &'a mut T;
 
@@ -827,16 +829,16 @@ impl<'a, T> Iterator for IterMut<'a, T>
 }
 
 pub struct Iter<'a, T>
-    where
-        T: 'a,
+where
+    T: 'a,
 {
     list: &'a GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T>
-    where
-        T: 'a,
+where
+    T: 'a,
 {
     type Item = &'a T;
 
@@ -883,8 +885,8 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> GenerationalTokenList<T>
-    where
-        T: PartialEq,
+where
+    T: PartialEq,
 {
     /// Returns `true` if list contains an item that equals `value`, `false` otherwise.
     ///
@@ -935,25 +937,328 @@ impl<T> GenerationalTokenList<T>
 
 #[cfg(test)]
 mod tests {
-    use crate::GenerationalTokenList;
+    use pretty_assertions::{assert_eq, assert_ne};
+
+    use crate::{GenerationalTokenList, Item, ItemToken};
+    use generational_arena::Index;
+
+    macro_rules! assert_eq_contents {
+        ($list:ident, $right:expr) => {
+            // do the lazy thing and just clone the data to compare
+            let data = $list.iter().map(Clone::clone).collect::<Vec<_>>();
+            pretty_assertions::assert_eq!(data.as_slice(), $right);
+        };
+    }
 
     #[test]
-    fn basic() {
-        let mut list = GenerationalTokenList::<i32>::new();
+    fn push_back() {
+        let mut list = GenerationalTokenList::new();
+        list.push_back(10);
+        list.push_back(20);
+        list.push_back(30);
+
+        assert_eq_contents!(list, &[10, 20, 30]);
+    }
+
+    #[test]
+    fn push_back_internals() {
+        let mut list = GenerationalTokenList::new();
         let item1 = list.push_back(10);
         let item2 = list.push_back(20);
         let item3 = list.push_back(30);
 
-        let data = list.iter().collect::<Vec<_>>();
-        assert_eq!(data, vec![&10, &20, &30]);
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![
+                (
+                    item1.index,
+                    &Item {
+                        data: 10,
+                        previous: None,
+                        next: Some(item2)
+                    }
+                ),
+                (
+                    item2.index,
+                    &Item {
+                        data: 20,
+                        previous: Some(item1),
+                        next: Some(item3)
+                    }
+                ),
+                (
+                    item3.index,
+                    &Item {
+                        data: 30,
+                        previous: Some(item2),
+                        next: None
+                    }
+                )
+            ]
+        );
+    }
+
+    #[test]
+    fn remove_invalid() {
+        let mut list = GenerationalTokenList::new();
+        let item1 = list.push_back(10);
+        list.push_back(20);
+        assert_eq_contents!(list, &[10, 20]);
+        assert_eq!(list.remove(item1), Some(10));
+        assert_eq_contents!(list, &[20]);
+        assert_eq!(list.remove(item1), None);
+        assert_eq_contents!(list, &[20]);
+    }
+
+    #[test]
+    fn remove_only() {
+        let mut list = GenerationalTokenList::new();
+        let item1 = list.push_back(10);
+
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item1));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![(
+                item1.index,
+                &Item {
+                    data: 10,
+                    previous: None,
+                    next: None
+                }
+            ),]
+        );
+
+        list.remove(item1);
+
+        assert_eq!(list.head, None);
+        assert_eq!(list.tail, None);
+        assert_eq!(list.arena.into_iter().collect::<Vec<_>>(), vec![]);
+    }
+
+    #[test]
+    fn remove_head() {
+        let mut list = GenerationalTokenList::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item2));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![
+                (
+                    item1.index,
+                    &Item {
+                        data: 10,
+                        previous: None,
+                        next: Some(item2)
+                    }
+                ),
+                (
+                    item2.index,
+                    &Item {
+                        data: 20,
+                        previous: Some(item1),
+                        next: None,
+                    }
+                )
+            ]
+        );
+
+        list.remove(item1);
+
+        assert_eq!(list.head, Some(item2));
+        assert_eq!(list.tail, Some(item2));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![(
+                item2.index,
+                &Item {
+                    data: 20,
+                    previous: None,
+                    next: None,
+                }
+            )]
+        );
+    }
+
+    #[test]
+    fn remove_tail() {
+        let mut list = GenerationalTokenList::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item2));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![
+                (
+                    item1.index,
+                    &Item {
+                        data: 10,
+                        previous: None,
+                        next: Some(item2)
+                    }
+                ),
+                (
+                    item2.index,
+                    &Item {
+                        data: 20,
+                        previous: Some(item1),
+                        next: None,
+                    }
+                )
+            ]
+        );
+
+        list.remove(item2);
+
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item1));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![(
+                item1.index,
+                &Item {
+                    data: 10,
+                    previous: None,
+                    next: None,
+                }
+            )]
+        );
+    }
+
+    #[test]
+    fn remove_middle() {
+        let mut list = GenerationalTokenList::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+        let item3 = list.push_back(30);
+        let item4 = list.push_back(40);
+
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item4));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![
+                (
+                    item1.index,
+                    &Item {
+                        data: 10,
+                        previous: None,
+                        next: Some(item2)
+                    }
+                ),
+                (
+                    item2.index,
+                    &Item {
+                        data: 20,
+                        previous: Some(item1),
+                        next: Some(item3),
+                    }
+                ),
+                (
+                    item3.index,
+                    &Item {
+                        data: 30,
+                        previous: Some(item2),
+                        next: Some(item4),
+                    }
+                ),
+                (
+                    item4.index,
+                    &Item {
+                        data: 40,
+                        previous: Some(item3),
+                        next: None,
+                    }
+                )
+            ]
+        );
+
+        list.remove(item2);
+
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item4));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![
+                (
+                    item1.index,
+                    &Item {
+                        data: 10,
+                        previous: None,
+                        next: Some(item3),
+                    }
+                ),
+                (
+                    item3.index,
+                    &Item {
+                        data: 30,
+                        previous: Some(item1),
+                        next: Some(item4),
+                    }
+                ),
+                (
+                    item4.index,
+                    &Item {
+                        data: 40,
+                        previous: Some(item3),
+                        next: None,
+                    }
+                )
+            ]
+        );
+
+        list.remove(item3);
+        assert_eq!(list.head, Some(item1));
+        assert_eq!(list.tail, Some(item4));
+        assert_eq!(
+            list.arena.iter().collect::<Vec<_>>(),
+            vec![
+                (
+                    item1.index,
+                    &Item {
+                        data: 10,
+                        previous: None,
+                        next: Some(item4),
+                    }
+                ),
+                (
+                    item4.index,
+                    &Item {
+                        data: 40,
+                        previous: Some(item1),
+                        next: None,
+                    }
+                )
+            ]
+        );
+    }
+
+    #[test]
+    fn pop_front() {
+        let mut list = GenerationalTokenList::new();
+        list.push_back(10);
+        list.push_back(20);
+        list.push_back(30);
+        assert_eq_contents!(list, &[10, 20, 30]);
+        assert_eq!(list.pop_front(), Some(10));
+        assert_eq_contents!(list, &[20, 30]);
+        assert_eq!(list.pop_front(), Some(20));
+        assert_eq_contents!(list, &[30]);
+        assert_eq!(list.pop_front(), Some(30));
+        assert_eq_contents!(list, &[]);
     }
 
     #[test]
     fn into_iter() {
         let mut list = GenerationalTokenList::<i32>::new();
-        let item1 = list.push_back(10);
-        let item2 = list.push_back(20);
-        let item3 = list.push_back(30);
+        list.push_back(10);
+        list.push_back(20);
+        list.push_back(30);
 
         let data = list.into_iter().collect::<Vec<_>>();
         assert_eq!(data, vec![10, 20, 30]);
