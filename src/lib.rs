@@ -106,11 +106,11 @@ impl<T> GenerationalTokenList<T> {
     }
 
     pub fn pop_front(&mut self) -> Option<T> {
-        self.head.map(|token| self.remove(token))
+        self.head.and_then(|token| self.remove(token))
     }
 
     pub fn pop_back(&mut self) -> Option<T> {
-        self.tail.map(|token| self.remove(token))
+        self.tail.and_then(|token| self.remove(token))
     }
 
     pub fn len(&self) -> usize {
