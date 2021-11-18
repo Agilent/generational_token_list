@@ -456,10 +456,6 @@ impl<T> GenerationalTokenList<T> {
         return token;
     }
 
-    fn new_node(&mut self, node: Item<T>) -> ItemToken {
-        self.new_node_with(|_| node)
-    }
-
     fn new_node_with(&mut self, create: impl FnOnce(ItemToken) -> Item<T>) -> ItemToken {
         let index = self.arena.insert_with(|index| create(ItemToken { index }));
         ItemToken { index }
