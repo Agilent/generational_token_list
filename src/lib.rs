@@ -719,14 +719,43 @@ impl<T> GenerationalTokenList<T> {
         self.insert_before_with(before, |_| data)
     }
 
-    fn iter(&self) -> Iter<T> {
+    /// Returns an iterator of references to item data in the list.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// list.push_back(5);
+    /// list.push_back(6);
+    /// list.push_back(7);
+    ///
+    /// let i = list.iter().enumerate().collect::<Vec<_>>();
+    /// assert_eq!(i, vec![(0, &5), (1, &6), (2, &7)]);
+    /// ```
+    pub fn iter(&self) -> Iter<T> {
         Iter {
             list: self,
             next_item: self.head,
         }
     }
 
-    fn iter_mut(&mut self) -> IterMut<T> {
+    /// Returns an iterator of mutable (exclusive) references to item data in the list.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// list.push_back(5);
+    /// list.push_back(6);
+    /// list.push_back(7);
+    ///
+    /// for i in list.iter_mut() {
+    ///     *i += 10;
+    /// }
+    ///
+    /// assert_eq!(list.into_iter().collect::<Vec<_>>(), vec![15, 16, 17]);
+    /// ```
+    pub fn iter_mut(&mut self) -> IterMut<T> {
         let head = self.head;
         IterMut {
             list: self,
@@ -734,13 +763,45 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
+    /// Returns the token corresponding to the item that is after that identified by `token`. Returns
+    /// `None` if no item comes after it (i.e. it is the tail).
+    ///
+    /// # Panics
+    /// Panics if `token` is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// let item1 = list.push_back(5);
+    /// let item2 = list.push_back(6);
+    /// list.push_back(7);
+    ///
+    /// assert_eq!(list.next_token(item1), Some(item2));
+    /// ```
     pub fn next_token(&self, token: ItemToken) -> Option<ItemToken> {
-        // TODO: unwrap OK?
         self.arena.get(token.index).unwrap().next
     }
 
+    /// Returns the token corresponding to the item that is before that identified by `token`. Returns
+    /// `None` if no item comes before it (i.e. it is the head).
+    ///
+    /// # Panics
+    /// Panics if `token` is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// list.push_back(5);
+    /// let item2 = list.push_back(6);
+    /// let item3 = list.push_back(7);
+    ///
+    /// assert_eq!(list.prev_token(item3), Some(item2));
+    /// ```
     pub fn prev_token(&self, token: ItemToken) -> Option<ItemToken> {
-        // TODO: unwrap OK?
         self.arena.get(token.index).unwrap().previous
     }
 }
@@ -829,10 +890,45 @@ impl<T> GenerationalTokenList<T>
     where
         T: PartialEq,
 {
+    /// Returns `true` if list contains an item that equals `value`, `false` otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// list.push_back(5);
+    /// list.push_back(6);
+    /// list.push_back(7);
+    ///
+    /// assert!(list.contains(&5));
+    /// assert!(! list.contains(&100));
+    /// ```
     pub fn contains(&self, value: &T) -> bool {
         self.iter().any(|v| v == value)
     }
 
+    /// Returns the token corresponding to the first item in the list comparing equal to `value`,
+    /// or `false` if no such item is found.
+    ///
+    /// If you require a different search strategy (for example, finding all items that compare equal),
+    /// consider using `iter` and the methods available on the [`Iterator`](https://doc.rust-lang.org/std/iter/trait.Iterator.html) trait.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// list.push_back(5);
+    /// list.push_back(6);
+    /// let seven = list.push_back(7);
+    /// let a_different_seven = list.push_back(7);
+    /// // Remember, they are different!
+    /// assert_ne!(seven, a_different_seven);
+    ///
+    /// assert_eq!(list.find_token(&7), Some(seven));
+    /// assert_eq!(list.find_token(&0), None);
+    /// ```
     pub fn find_token(&self, value: &T) -> Option<ItemToken> {
         self.arena
             .iter()
