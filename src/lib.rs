@@ -7,11 +7,15 @@ struct Item<T> {
     next: Option<ItemToken>,
 }
 
+/// An opaque reference to an item in the list.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemToken {
     index: Index,
 }
 
+/// A doubly linked list, backed by [generational-arena](https://github.com/fitzgen/generational-arena).
+///
+/// See the crate documentation for more.
 #[derive(Debug)]
 pub struct GenerationalTokenList<T> {
     arena: Arena<Item<T>>,
@@ -26,6 +30,7 @@ impl<T> Default for GenerationalTokenList<T> {
 }
 
 impl<T> GenerationalTokenList<T> {
+    /// Creates a new `GenerationalTokenList<T>`.
     pub fn new() -> Self {
         GenerationalTokenList {
             arena: Arena::new(),
@@ -34,6 +39,7 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
+    /// Creates a new `GenerationalTokenList<T>` with given capacity.
     pub fn with_capacity(n: usize) -> Self {
         GenerationalTokenList {
             arena: Arena::with_capacity(n),
@@ -42,26 +48,32 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
+    /// Returns a reference to the first item in the list, or None if list is empty.
     pub fn head(&self) -> Option<&T> {
         self.head.map(|token| self.get(token).unwrap())
     }
 
+    /// Returns a mutable reference to the first item in the list, or None if list is empty.
     pub fn head_mut(&mut self) -> Option<&mut T> {
         self.head.map(|token| self.get_mut(token).unwrap())
     }
 
+    /// Returns a reference to the last item in the list, or None if list is empty.
     pub fn tail(&self) -> Option<&T> {
         self.tail.map(|token| self.get(token).unwrap())
     }
 
+    /// Returns a mutable reference to the last item in the list, or None if list is empty.
     pub fn tail_mut(&mut self) -> Option<&mut T> {
         self.tail.map(|token| self.get_mut(token).unwrap())
     }
 
+    /// Returns the token corresponding to first item in the list, or None if list is empty.
     pub fn head_token(&self) -> Option<ItemToken> {
         self.head
     }
 
+    /// Returns the token corresponding to last item in the list, or None if list is empty.
     pub fn tail_token(&self) -> Option<ItemToken> {
         self.tail
     }
