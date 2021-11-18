@@ -44,7 +44,10 @@ fn main() {
 The only usage of `unsafe` is in the implementation of `iter_mut`. I don't think there is any other way. 
 
 ## TODO
+Pull requests are welcome :)
+
 - Implement `Index` and `IndexMut` traits
+- Add `no-std` support?
 
 ## Disclaimer
 This is not an official Agilent product. No support is implied.
