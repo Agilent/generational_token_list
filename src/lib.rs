@@ -8,6 +8,70 @@ struct Item<T> {
 }
 
 /// An opaque reference to an item in the list.
+///
+/// Tokens remain valid for as long as their corresponding item is still in the list. Tokens can be
+/// freely copied/cloned.
+///
+/// # Examples
+/// ```
+/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// let mut list = GenerationalTokenList::<&str>::new();
+/// let item1: ItemToken = list.push_back("OK then buddy");
+/// assert_eq!(list.get(item1), Some(&"OK then buddy"));
+/// ```
+///
+/// Even if you remove other items and/or insert new items, tokens remain valid.
+///
+/// ```
+/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// let mut list = GenerationalTokenList::new();
+/// let item1 = list.push_back(1);
+/// let item2 = list.push_back(2);
+///
+/// assert_eq!(list.get(item2), Some(&2));
+///
+/// list.remove(item1);
+///
+/// assert_eq!(list.get(item2), Some(&2));
+/// ```
+///
+/// Trying to `get` an item via an invalid token will return `None`.
+///
+/// ```
+/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// let mut list = GenerationalTokenList::new();
+/// let item1 = list.push_back(1);
+/// list.push_back(2);
+/// list.remove(item1);
+/// assert_eq!(list.get(item1), None);
+/// ```
+///
+/// Even if you re-insert the same data into the same place, the returned old token is still invalid.
+///
+/// ```
+/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// let mut list = GenerationalTokenList::new();
+/// let item1 = list.push_back(1);
+/// list.push_back(2);
+/// assert_eq!(list.iter().collect::<Vec<_>>(), vec![&1, &2]);
+///
+/// list.remove(item1);
+/// // Token is now invalid
+/// assert_eq!(list.iter().collect::<Vec<_>>(), vec![&2]);
+/// assert_eq!(list.get(item1), None);
+///
+/// let item1_new = list.push_front(1);
+/// // The list looks the same as it was before `remove`...
+/// assert_eq!(list.iter().collect::<Vec<_>>(), vec![&1, &2]);
+///
+/// // ...but the old token is still invalid.
+/// assert_eq!(list.get(item1), None);
+/// // And the new token works fine.
+/// assert_eq!(list.get(item1_new), Some(&1));
+///
+/// // You can confirm that item1 != item1_new
+/// assert_ne!(item1, item1_new);
+/// ```
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ItemToken {
     index: Index,
@@ -31,6 +95,13 @@ impl<T> Default for GenerationalTokenList<T> {
 
 impl<T> GenerationalTokenList<T> {
     /// Creates a new `GenerationalTokenList<T>`.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back(String::from("Hi, friend!"));
+    /// ```
     pub fn new() -> Self {
         GenerationalTokenList {
             arena: Arena::new(),
@@ -48,42 +119,134 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
-    /// Returns a reference to the first item in the list, or None if list is empty.
+    /// Returns a reference to the first item in the list, or `None` if list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back("slice");
+    /// list.push_back("and");
+    /// list.push_back("dice");
+    /// assert_eq!(list.head(), Some(&"slice"));
+    /// ```
     pub fn head(&self) -> Option<&T> {
         self.head.map(|token| self.get(token).unwrap())
     }
 
-    /// Returns a mutable reference to the first item in the list, or None if list is empty.
+    /// Returns a mutable reference to the first item in the list, or `None` if list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back("sugar");
+    /// list.push_back("and");
+    /// list.push_back("spice");
+    /// *list.head_mut().unwrap() = "WAT";
+    /// assert_eq!(list.head(), Some(&"WAT"));
+    /// ```
     pub fn head_mut(&mut self) -> Option<&mut T> {
         self.head.map(|token| self.get_mut(token).unwrap())
     }
 
-    /// Returns a reference to the last item in the list, or None if list is empty.
+    /// Returns a reference to the last item in the list, or `None` if list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back("slice");
+    /// list.push_back("and");
+    /// list.push_back("dice");
+    /// assert_eq!(list.tail(), Some(&"dice"));
+    /// ```
     pub fn tail(&self) -> Option<&T> {
         self.tail.map(|token| self.get(token).unwrap())
     }
 
-    /// Returns a mutable reference to the last item in the list, or None if list is empty.
+    /// Returns a mutable reference to the last item in the list, or `None` if list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back("sugar");
+    /// list.push_back("and");
+    /// list.push_back("spice");
+    /// *list.tail_mut().unwrap() = "WAT";
+    /// assert_eq!(list.tail(), Some(&"WAT"));
+    /// ```
     pub fn tail_mut(&mut self) -> Option<&mut T> {
         self.tail.map(|token| self.get_mut(token).unwrap())
     }
 
-    /// Returns the token corresponding to first item in the list, or None if list is empty.
+    /// Returns the token corresponding to first item in the list, or `None` if list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let head = list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    /// assert_eq!(list.head_token(), Some(head));
+    /// ```
     pub fn head_token(&self) -> Option<ItemToken> {
         self.head
     }
 
-    /// Returns the token corresponding to last item in the list, or None if list is empty.
+    /// Returns the token corresponding to last item in the list, or `None` if list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// let tail = list.push_back(3);
+    /// assert_eq!(list.tail_token(), Some(tail));
+    /// ```
     pub fn tail_token(&self) -> Option<ItemToken> {
         self.tail
     }
 
+    /// Remove all items from the arena. Invalidates all tokens.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back(String::from("moo"));
+    /// let moo_2 = list.push_back(String::from("moo"));
+    /// list.push_back(String::from("cow"));
+    /// list.clear();
+    /// assert_eq!(list.get(moo_2), None);
+    /// ```
     pub fn clear(&mut self) {
         self.arena.clear();
         self.head = None;
         self.tail = None;
     }
 
+    /// Remove the item identified by given token from the list and return the item. Invalidates the
+    /// token. Returns `None` if token is invalid.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let one = list.push_back(1);
+    /// let two = list.push_back(2);
+    /// let zero = list.push_front(0);
+    /// assert_eq!(list.iter().collect::<Vec<_>>(), vec![&0, &1, &2]);
+    ///
+    /// assert_eq!(list.remove(one).unwrap(), 1);
+    /// // Token `one` is now invalid
+    /// assert_eq!(list.get(one), None);
+    ///
+    /// assert_eq!(list.iter().collect::<Vec<_>>(), vec![&0, &2]);
+    /// ```
     pub fn remove(&mut self, token: ItemToken) -> Option<T> {
         let item = self.arena.remove(token.index)?;
 
@@ -117,30 +280,149 @@ impl<T> GenerationalTokenList<T> {
         Some(item.data)
     }
 
+
+    /// Remove first (head) item from the list and return it. Any tokens pointing to head are invalidated.
+    /// Returns `None` if the list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    /// assert_eq!(list.len(), 3);
+    /// assert_eq!(list.pop_front(), Some(1));
+    /// assert_eq!(list.len(), 2);
+    /// ```
     pub fn pop_front(&mut self) -> Option<T> {
         self.head.and_then(|token| self.remove(token))
     }
 
+    /// Remove last (tail) item from the list and return it. Any tokens pointing to tail are invalidated.
+    /// Returns `None` if the list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    /// assert_eq!(list.len(), 3);
+    /// assert_eq!(list.pop_back(), Some(3));
+    /// assert_eq!(list.len(), 2);
+    /// ```
     pub fn pop_back(&mut self) -> Option<T> {
         self.tail.and_then(|token| self.remove(token))
     }
 
+    /// Returns the number of items in the list.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// assert_eq!(list.len(), 0);
+    /// list.push_back(1);
+    /// list.push_back(2);
+    /// list.push_back(3);
+    /// assert_eq!(list.len(), 3);
+    /// ```
     pub fn len(&self) -> usize {
         self.arena.len()
     }
 
+    /// Returns the capacity of the list.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<String>::with_capacity(10);
+    /// assert_eq!(list.capacity(), 10);
+    /// ```
     pub fn capacity(&self) -> usize {
         self.arena.capacity()
     }
 
+    /// Get a reference to the data pointed to by given token, or `None` if token is invalid.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back(vec![0, 1, 2]);
+    /// let item2 = list.push_back(vec![3, 4, 5]);
+    /// let item3 = list.push_back(vec![6, 7, 8]);
+    /// assert_eq!(list.get(item2).unwrap(), &vec![3, 4, 5])
+    /// ```
     pub fn get(&self, token: ItemToken) -> Option<&T> {
         self.arena.get(token.index).map(|i| &i.data)
     }
 
+    /// Get a mutable reference to the data pointed to by given token, or `None` if token is invalid.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back(vec![0, 1, 2]);
+    /// let item2 = list.push_back(vec![3, 4, 5]);
+    /// let item3 = list.push_back(vec![6, 7, 8]);
+    ///
+    /// let item2_data = list.get_mut(item2).unwrap();
+    /// item2_data.push(100);
+    /// assert_eq!(list.get(item2).unwrap(), &vec![3, 4, 5, 100]);
+    /// ```
     pub fn get_mut(&mut self, token: ItemToken) -> Option<&mut T> {
         self.arena.get_mut(token.index).map(|i| &mut i.data)
     }
 
+    /// Get a pair of mutable (exclusive) references to the items identified by `token1` and `token2`.
+    ///
+    /// # Panics
+    /// Panics if `token1` and `token2` correspond to the same item.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back(vec![0, 1, 2]);
+    /// let item2 = list.push_back(vec![3, 4, 5]);
+    /// let item3 = list.push_back(vec![6, 7, 8]);
+    ///
+    /// let (item2_data, item3_data) = list.get2_mut(item2, item3);
+    ///
+    /// item2_data.unwrap().clear();
+    /// item3_data.unwrap().pop();
+    /// assert_eq!(list.get(item2).unwrap(), &vec![]);
+    /// assert_eq!(list.get(item3).unwrap(), &vec![6, 7])
+    /// ```
+    ///
+    /// This will panic:
+    ///
+    /// ```should_panic
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back(vec![0, 1, 2]);
+    /// list.push_back(vec![3, 4, 5]);
+    ///
+    /// let (_, _) = list.get2_mut(item1, item1);
+    /// ```
+    ///
+    /// Like `get_mut`, None will be returned if the token is invalid.
+    ///
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back(vec![0, 1, 2]);
+    /// let item2 = list.push_back(vec![3, 4, 5]);
+    /// list.remove(item2);
+    ///
+    /// let (item1_data, item2_data) = list.get2_mut(item1, item2);
+    /// assert_eq!(item1_data.unwrap(), &vec![0, 1, 2]);
+    /// assert_eq!(item2_data, None);
+    /// ```
     pub fn get2_mut(
         &mut self,
         token1: ItemToken,
@@ -150,6 +432,14 @@ impl<T> GenerationalTokenList<T> {
         (item1.map(|i| &mut i.data), item2.map(|i| &mut i.data))
     }
 
+    /// Returns whether the list is empty.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let empty_list = GenerationalTokenList::<String>::new();
+    /// assert!(empty_list.is_empty());
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.arena.is_empty()
     }
@@ -175,6 +465,26 @@ impl<T> GenerationalTokenList<T> {
         ItemToken { index }
     }
 
+    /// Insert the item returned by `create` at the end of the list. Returns a token which
+    /// corresponds to the new item.
+    ///
+    /// This method allows you to add items that know their own token.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// struct Meta {
+    ///     data: u8,
+    ///     my_token: ItemToken,
+    /// }
+    ///
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back_with(|token| Meta { data: 1, my_token: token});
+    /// let item2 = list.push_back_with(|token| Meta { data: 2, my_token: token});
+    ///
+    /// let item1_data = list.head().unwrap();
+    /// assert_eq!(item1, item1_data.my_token);
+    /// ```
     pub fn push_back_with(&mut self, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
         if self.head.is_none() {
             return self.push_only_item_with(create);
@@ -195,10 +505,39 @@ impl<T> GenerationalTokenList<T> {
         ret
     }
 
+    /// Insert a new item at the end of the list. Returns a token which corresponds to the new item.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_back("ITEM1");
+    /// assert_eq!(list.get(item1), Some(&"ITEM1"));
+    /// ```
     pub fn push_back(&mut self, data: T) -> ItemToken {
         self.push_back_with(|_| data)
     }
 
+    /// Insert the item returned by `create` at the beginning of the list. Returns a token which
+    /// corresponds to the new item.
+    ///
+    /// This method allows you to add items that know their own token.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// struct Meta {
+    ///     data: u8,
+    ///     my_token: ItemToken,
+    /// }
+    ///
+    /// let mut list = GenerationalTokenList::new();
+    /// let item1 = list.push_front_with(|token| Meta { data: 1, my_token: token});
+    /// let item2 = list.push_front_with(|token| Meta { data: 2, my_token: token});
+    ///
+    /// let item2_data = list.head().unwrap();
+    /// assert_eq!(item2, item2_data.my_token);
+    /// ```
     pub fn push_front_with(&mut self, create: impl FnOnce(ItemToken) -> T) -> ItemToken {
         if self.head.is_none() {
             return self.push_only_item_with(create);
@@ -218,10 +557,45 @@ impl<T> GenerationalTokenList<T> {
         ret
     }
 
+    /// Insert a new item at the beginning of the list. Returns a token which corresponds to the new item.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back(":)");
+    /// list.push_back(":/");
+    /// list.push_front(":|");
+    /// assert_eq!(list.head(), Some(&":|"));
+    /// ```
     pub fn push_front(&mut self, data: T) -> ItemToken {
         self.push_front_with(|_| data)
     }
 
+    /// Insert the item returned by `create` after the item identified by given token. Returns a token
+    /// which corresponds to the new item.
+    ///
+    /// This method allows you to add items that know their own token.
+    ///
+    /// # Panics
+    /// Panics if `after` is an invalid token.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// struct Meta {
+    ///     data: u8,
+    ///     my_token: ItemToken,
+    /// }
+    ///
+    /// let mut list = GenerationalTokenList::new();
+    /// let head = list.push_back_with(|token| Meta { data: 0, my_token: token });
+    /// list.push_back_with(|token| Meta { data: 2, my_token: token });
+    ///
+    /// list.insert_after_with(head, |token| Meta { data: 1, my_token: token });
+    ///
+    /// assert_eq!(list.into_iter().map(|m| m.data).collect::<Vec<_>>(), vec![0, 1, 2]);
+    /// ```
     pub fn insert_after_with(
         &mut self,
         after: ItemToken,
@@ -253,10 +627,48 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
+    /// Insert a new item after the item identified by given token.
+    ///
+    /// # Panics
+    /// Panics if `after` is an invalid token.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// let item1 = list.push_back(10);
+    /// list.push_back(20);
+    /// list.insert_after(item1, 300);
+    /// assert_eq!(list.into_iter().collect::<Vec<_>>(), vec![10, 300, 20])
+    /// ```
     pub fn insert_after(&mut self, after: ItemToken, data: T) -> ItemToken {
         self.insert_after_with(after, |_| data)
     }
 
+    /// Insert the item returned by `create` before the item identified by given token. Returns a token
+    /// which corresponds to the new item.
+    ///
+    /// This method allows you to add items that know their own token.
+    ///
+    /// # Panics
+    /// Panics if `before` is an invalid token.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// struct Meta {
+    ///     data: u8,
+    ///     my_token: ItemToken,
+    /// }
+    ///
+    /// let mut list = GenerationalTokenList::new();
+    /// list.push_back_with(|token| Meta { data: 0, my_token: token });
+    /// let tail = list.push_back_with(|token| Meta { data: 2, my_token: token });
+    ///
+    /// list.insert_before_with(tail, |token| Meta { data: 1, my_token: token });
+    ///
+    /// assert_eq!(list.into_iter().map(|m| m.data).collect::<Vec<_>>(), vec![0, 1, 2]);
+    /// ```
     pub fn insert_before_with(
         &mut self,
         before: ItemToken,
@@ -288,6 +700,21 @@ impl<T> GenerationalTokenList<T> {
         }
     }
 
+    /// Insert a new item before the item identified by given token.
+    ///
+    /// # Panics
+    /// Panics if `before` is an invalid token.
+    ///
+    /// # Examples
+    /// ```
+    /// # use generational_indexlist::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// list.push_back(20);
+    /// list.push_back(100);
+    /// let item3 = list.push_back(10);
+    /// list.insert_before(item3, 300);
+    /// assert_eq!(list.into_iter().collect::<Vec<_>>(), vec![20, 100, 300, 10])
+    /// ```
     pub fn insert_before(&mut self, before: ItemToken, data: T) -> ItemToken {
         self.insert_before_with(before, |_| data)
     }
@@ -319,16 +746,16 @@ impl<T> GenerationalTokenList<T> {
 }
 
 pub struct IterMut<'a, T>
-where
-    T: 'a,
+    where
+        T: 'a,
 {
     list: &'a mut GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
 impl<'a, T> Iterator for IterMut<'a, T>
-where
-    T: 'a,
+    where
+        T: 'a,
 {
     type Item = &'a mut T;
 
@@ -343,16 +770,16 @@ where
 }
 
 pub struct Iter<'a, T>
-where
-    T: 'a,
+    where
+        T: 'a,
 {
     list: &'a GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T>
-where
-    T: 'a,
+    where
+        T: 'a,
 {
     type Item = &'a T;
 
@@ -399,8 +826,8 @@ impl<T> Iterator for IntoIter<T> {
 }
 
 impl<T> GenerationalTokenList<T>
-where
-    T: PartialEq,
+    where
+        T: PartialEq,
 {
     pub fn contains(&self, value: &T) -> bool {
         self.iter().any(|v| v == value)
