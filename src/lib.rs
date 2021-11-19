@@ -939,10 +939,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::{assert_eq};
+    use pretty_assertions::assert_eq;
 
     use crate::{GenerationalTokenList, Item};
-
 
     macro_rules! assert_eq_contents {
         ($list:ident, $right:expr) => {
