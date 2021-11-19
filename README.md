@@ -68,6 +68,14 @@ The only usage of `unsafe` is in the implementation of `iter_mut`. I don't think
 Pull requests are welcome :)
 
 - Implement `Index` and `IndexMut` traits
+- Implement `Drain`
+- Implement `try_push_*` and `try_insert_*` methods
+- Implement flavors of `push_*_with` and `insert_*_with` that allow fallible insertion of items? E.g.:
+```rust
+pub fn push_back_fallible(&mut self, create: impl FnOnce(ItemToken) -> Result<T>) -> Result<ItemToken> {
+    //...
+}
+```
 - Add `no-std` support?'
 - Consider adding `#[inline]` to some methods?
 
