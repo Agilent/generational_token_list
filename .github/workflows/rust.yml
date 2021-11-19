@@ -18,5 +18,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
+    - name: rust-clippy-check
+      uses: actions-rs/clippy-check@v1.0.7
     - name: Run tests
       run: cargo test --verbose
