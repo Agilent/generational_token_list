@@ -1,4 +1,5 @@
 # generational_token_list
+[![Rust](https://github.com/Agilent/generational_token_list/actions/workflows/rust.yml/badge.svg)](https://github.com/Agilent/generational_token_list/actions/workflows/rust.yml)
 
 A doubly-linked list backed by [generational-arena](https://github.com/fitzgen/generational-arena). Inspired by [indexlist](https://github.com/steveklabnik/indexlist).
 
