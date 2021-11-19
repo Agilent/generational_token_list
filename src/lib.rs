@@ -455,7 +455,7 @@ impl<T> GenerationalTokenList<T> {
         });
         self.head = Some(token);
         self.tail = Some(token);
-        return token;
+        token
     }
 
     fn new_node_with(&mut self, create: impl FnOnce(ItemToken) -> Item<T>) -> ItemToken {
@@ -937,10 +937,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::{assert_eq};
 
-    use crate::{GenerationalTokenList, Item, ItemToken};
-    use generational_arena::Index;
+    use crate::{GenerationalTokenList, Item};
+    
 
     macro_rules! assert_eq_contents {
         ($list:ident, $right:expr) => {
