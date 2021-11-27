@@ -8,6 +8,10 @@ homepage = "https://github.com/Agilent/generational_token_list"
 license = "MIT"
 description = "A doubly-linked list backed by generational-arena."
 
+exclude = [
+    ".github/*"
+]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
