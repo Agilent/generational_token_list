@@ -17,7 +17,7 @@ struct Item<T> {
 ///
 /// # Examples
 /// ```
-/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// # use generational_token_list::{GenerationalTokenList, ItemToken};
 /// let mut list = GenerationalTokenList::<&str>::new();
 /// let item1: ItemToken = list.push_back("OK then buddy");
 /// assert_eq!(list.get(item1), Some(&"OK then buddy"));
@@ -26,7 +26,7 @@ struct Item<T> {
 /// Even if you remove other items and/or insert new items, tokens remain valid.
 ///
 /// ```
-/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// # use generational_token_list::{GenerationalTokenList, ItemToken};
 /// let mut list = GenerationalTokenList::new();
 /// let item1 = list.push_back(1);
 /// let item2 = list.push_back(2);
@@ -41,7 +41,7 @@ struct Item<T> {
 /// Trying to `get` an item via an invalid token will return `None`.
 ///
 /// ```
-/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// # use generational_token_list::{GenerationalTokenList, ItemToken};
 /// let mut list = GenerationalTokenList::new();
 /// let item1 = list.push_back(1);
 /// list.push_back(2);
@@ -52,7 +52,7 @@ struct Item<T> {
 /// Even if you re-insert the same data into the same place, the returned old token is still invalid.
 ///
 /// ```
-/// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+/// # use generational_token_list::{GenerationalTokenList, ItemToken};
 /// let mut list = GenerationalTokenList::new();
 /// let item1 = list.push_back(1);
 /// list.push_back(2);
@@ -101,7 +101,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back(String::from("Hi, friend!"));
     /// ```
@@ -126,7 +126,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back("slice");
     /// list.push_back("and");
@@ -141,7 +141,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back("sugar");
     /// list.push_back("and");
@@ -157,7 +157,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back("slice");
     /// list.push_back("and");
@@ -172,7 +172,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back("sugar");
     /// list.push_back("and");
@@ -188,7 +188,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// assert_eq!(list.head_token(), None);
     /// let head = list.push_back(1);
@@ -204,7 +204,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// assert_eq!(list.tail_token(), None);
     /// list.push_back(1);
@@ -220,7 +220,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back(String::from("moo"));
     /// let moo_2 = list.push_back(String::from("moo"));
@@ -239,7 +239,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let one = list.push_back(1);
     /// let two = list.push_back(2);
@@ -290,7 +290,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back(1);
     /// list.push_back(2);
@@ -308,7 +308,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back(1);
     /// list.push_back(2);
@@ -325,7 +325,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// assert_eq!(list.len(), 0);
     /// list.push_back(1);
@@ -341,7 +341,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<String>::with_capacity(10);
     /// assert_eq!(list.capacity(), 10);
     /// ```
@@ -353,7 +353,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let item1 = list.push_back(vec![0, 1, 2]);
     /// let item2 = list.push_back(vec![3, 4, 5]);
@@ -368,7 +368,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let item1 = list.push_back(vec![0, 1, 2]);
     /// let item2 = list.push_back(vec![3, 4, 5]);
@@ -389,7 +389,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let item1 = list.push_back(vec![0, 1, 2]);
     /// let item2 = list.push_back(vec![3, 4, 5]);
@@ -406,7 +406,7 @@ impl<T> GenerationalTokenList<T> {
     /// This will panic:
     ///
     /// ```should_panic
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let item1 = list.push_back(vec![0, 1, 2]);
     /// list.push_back(vec![3, 4, 5]);
@@ -417,7 +417,7 @@ impl<T> GenerationalTokenList<T> {
     /// Like `get_mut`, None will be returned if the token is invalid.
     ///
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let item1 = list.push_back(vec![0, 1, 2]);
     /// let item2 = list.push_back(vec![3, 4, 5]);
@@ -440,7 +440,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let empty_list = GenerationalTokenList::<String>::new();
     /// assert!(empty_list.is_empty());
     /// ```
@@ -472,7 +472,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// # use generational_token_list::{GenerationalTokenList, ItemToken};
     /// struct Meta {
     ///     data: u8,
     ///     my_token: ItemToken,
@@ -509,7 +509,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// let item1 = list.push_back("ITEM1");
     /// assert_eq!(list.get(item1), Some(&"ITEM1"));
@@ -525,7 +525,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// # use generational_token_list::{GenerationalTokenList, ItemToken};
     /// struct Meta {
     ///     data: u8,
     ///     my_token: ItemToken,
@@ -561,7 +561,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::new();
     /// list.push_back(":)");
     /// list.push_back(":/");
@@ -582,7 +582,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// # use generational_token_list::{GenerationalTokenList, ItemToken};
     /// struct Meta {
     ///     data: u8,
     ///     my_token: ItemToken,
@@ -634,7 +634,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// let item1 = list.push_back(10);
     /// list.push_back(20);
@@ -655,7 +655,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::{GenerationalTokenList, ItemToken};
+    /// # use generational_token_list::{GenerationalTokenList, ItemToken};
     /// struct Meta {
     ///     data: u8,
     ///     my_token: ItemToken,
@@ -707,7 +707,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// list.push_back(20);
     /// list.push_back(100);
@@ -723,7 +723,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// list.push_back(5);
     /// list.push_back(6);
@@ -743,7 +743,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// # Examples
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// list.push_back(5);
     /// list.push_back(6);
@@ -772,7 +772,7 @@ impl<T> GenerationalTokenList<T> {
     /// # Examples
     ///
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// let item1 = list.push_back(5);
     /// let item2 = list.push_back(6);
@@ -793,7 +793,7 @@ impl<T> GenerationalTokenList<T> {
     /// # Examples
     ///
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// list.push_back(5);
     /// let item2 = list.push_back(6);
@@ -895,7 +895,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// list.push_back(5);
     /// list.push_back(6);
@@ -917,7 +917,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use generational_indexlist::GenerationalTokenList;
+    /// # use generational_token_list::GenerationalTokenList;
     /// let mut list = GenerationalTokenList::<i32>::new();
     /// list.push_back(5);
     /// list.push_back(6);
