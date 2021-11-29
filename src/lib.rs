@@ -833,7 +833,9 @@ where
             self.next_item = i.next;
 
             #[cfg_attr(feature = "iter-mut", allow(unsafe_code))]
-            unsafe { &mut *(&mut i.data as *mut T) }
+            unsafe {
+                &mut *(&mut i.data as *mut T)
+            }
         })
     }
 }
