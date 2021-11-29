@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 
+#![cfg_attr(not(feature = "iter-mut"), forbid(unsafe_code))]
+#![cfg_attr(feature = "iter-mut", deny(unsafe_code))]
+
 use generational_arena::{Arena, Index};
 
 #[derive(Debug)]
@@ -755,6 +758,7 @@ impl<T> GenerationalTokenList<T> {
     ///
     /// assert_eq!(list.into_iter().collect::<Vec<_>>(), vec![15, 16, 17]);
     /// ```
+    #[cfg(feature = "iter-mut")]
     pub fn iter_mut(&mut self) -> IterMut<T> {
         let head = self.head;
         IterMut {
@@ -806,6 +810,7 @@ impl<T> GenerationalTokenList<T> {
     }
 }
 
+#[cfg(feature = "iter-mut")]
 pub struct IterMut<'a, T>
 where
     T: 'a,
@@ -814,6 +819,7 @@ where
     next_item: Option<ItemToken>,
 }
 
+#[cfg(feature = "iter-mut")]
 impl<'a, T> Iterator for IterMut<'a, T>
 where
     T: 'a,
@@ -825,6 +831,8 @@ where
 
         self.list.arena.get_mut(next_item.index).map(|i| {
             self.next_item = i.next;
+
+            #[cfg_attr(feature = "iter-mut", allow(unsafe_code))]
             unsafe { &mut *(&mut i.data as *mut T) }
         })
     }

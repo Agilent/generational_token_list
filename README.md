@@ -56,11 +56,19 @@ fn main() {
 ```
 
 3. Passthrough of `get2_mut` method from [generational-arena](https://github.com/fitzgen/generational-arena).
-4. Implements `Iter` and `IterMut` traits.
+4. Implements `Iter` and `IterMut`<sup>1</sup> traits.
+
+<sup>1</sup> requires enabling `iter-mut` feature 
+
+## Cargo features
+
+- `iter-mut`: enables the `iter_mut` method. See "Safety" section for more details.
 
 ## Safety
 
-The only usage of `unsafe` is in the implementation of `iter_mut`. I don't think there is any other way. 
+By default, this crate is `forbid(unsafe_code)`.
+
+If you need `GenerationalTokenList::iter_mut` then you must enable the `iter-mut` feature. Doing so makes the crate `deny(unsafe_code)`, and the `unsafe` block inside `iter_mut` is excluded via `allow(unsafe_code)`.
 
 ## Similar crates
 - [indexlist](https://github.com/steveklabnik/indexlist)
