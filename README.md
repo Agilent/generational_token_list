@@ -1,4 +1,6 @@
 # generational_token_list
+[![](https://docs.rs/generational_token_list/badge.svg)](https://docs.rs/generational_token_list/)
+![crates.io](https://img.shields.io/crates/v/generational_token_list.svg)
 [![Rust](https://github.com/Agilent/generational_token_list/actions/workflows/rust.yml/badge.svg)](https://github.com/Agilent/generational_token_list/actions/workflows/rust.yml)
 ![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)
 
