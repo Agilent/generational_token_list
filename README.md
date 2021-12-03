@@ -68,7 +68,7 @@ fn main() {
 
 By default, this crate is `forbid(unsafe_code)`.
 
-If you need `GenerationalTokenList::iter_mut` then you must enable the `iter-mut` feature. Doing so makes the crate `deny(unsafe_code)`, and the `unsafe` block inside `iter_mut` is excluded via `allow(unsafe_code)`.
+If you need `GenerationalTokenList::iter_mut` and/or GenerationalTokenList::iter_with_tokens_mut then you must enable the `iter-mut` feature. Doing so makes the crate `deny(unsafe_code)`, and the `unsafe` block inside `iter_mut` is excluded via `allow(unsafe_code)`.
 
 ## Similar crates
 - [indexlist](https://github.com/steveklabnik/indexlist)
