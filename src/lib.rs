@@ -1366,4 +1366,40 @@ mod tests {
         assert_eq!(list[item2], 20);
         assert_eq!(list[item3], 270);
     }
+
+    #[test]
+    fn iter_with_tokens() {
+        let mut list = GenerationalTokenList::<i32>::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+        let item3 = list.push_back(30);
+
+        let mut iter = list.iter_with_tokens();
+        assert_eq!(iter.next(), Some((item1, &10)));
+        assert_eq!(iter.next(), Some((item2, &20)));
+        assert_eq!(iter.next(), Some((item3, &30)));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter_with_tokens_mut() {
+        let mut list = GenerationalTokenList::<i32>::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+        let item3 = list.push_back(30);
+
+        let mut iter = list.iter_with_tokens_mut();
+        let i1 = iter.next().unwrap();
+        assert_eq!(i1.0, item1);
+        *i1.1 *= 2;
+        let i2 = iter.next().unwrap();
+        let i3 = iter.next().unwrap();
+        *i2.1 *= 3;
+        *i3.1 *= 4;
+        assert_eq!(i2.0, item2);
+        assert_eq!(i3.0, item3);
+
+        let data = list.into_iter().collect::<Vec<_>>();
+        assert_eq!(data, vec![20, 60, 120]);
+    }
 }
