@@ -999,6 +999,20 @@ where
     }
 }
 
+impl<T> std::ops::Index<ItemToken> for GenerationalTokenList<T> {
+    type Output = T;
+
+    fn index(&self, token: ItemToken) -> &Self::Output {
+        self.get(token).unwrap()
+    }
+}
+
+impl<T> std::ops::IndexMut<ItemToken> for GenerationalTokenList<T> {
+    fn index_mut(&mut self, token: ItemToken) -> &mut Self::Output {
+        self.get_mut(token).unwrap()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
@@ -1325,5 +1339,31 @@ mod tests {
 
         let data = list.into_iter().collect::<Vec<_>>();
         assert_eq!(data, vec![10, 20, 30]);
+    }
+
+    #[test]
+    fn index() {
+        let mut list = GenerationalTokenList::<i32>::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+        let item3 = list.push_back(30);
+        assert_eq!(list[item1], 10);
+        assert_eq!(list[item2], 20);
+        assert_eq!(list[item3], 30);
+    }
+
+    #[test]
+    fn index_mut() {
+        let mut list = GenerationalTokenList::<i32>::new();
+        let item1 = list.push_back(10);
+        let item2 = list.push_back(20);
+        let item3 = list.push_back(30);
+
+        list[item1] = 500;
+        list[item3] *= 9;
+
+        assert_eq!(list[item1], 500);
+        assert_eq!(list[item2], 20);
+        assert_eq!(list[item3], 270);
     }
 }

@@ -79,7 +79,6 @@ If you need `GenerationalTokenList::iter_mut` then you must enable the `iter-mut
 ## TODO
 Pull requests are welcome :)
 
-- Implement `Index` and `IndexMut` traits
 - Implement `Drain`
 - Implement `try_push_*` and `try_insert_*` methods
 - Implement flavors of `push_*_with` and `insert_*_with` that allow fallible insertion of items? E.g.:
