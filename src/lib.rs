@@ -737,6 +737,13 @@ impl<T> GenerationalTokenList<T> {
     /// ```
     pub fn iter(&self) -> Iter<T> {
         Iter {
+            inner: self.iter_with_tokens(),
+        }
+    }
+
+    /// Returns an iterator of pairs of (item tokens, references to item data) in the list.
+    pub fn iter_with_tokens(&self) -> IterWithTokens<T> {
+        IterWithTokens {
             list: self,
             next_item: self.head,
         }
@@ -760,8 +767,16 @@ impl<T> GenerationalTokenList<T> {
     /// ```
     #[cfg(feature = "iter-mut")]
     pub fn iter_mut(&mut self) -> IterMut<T> {
-        let head = self.head;
         IterMut {
+            inner: self.iter_with_tokens_mut(),
+        }
+    }
+
+    /// Returns an iterator of pairs of (item tokens, mutable (exclusive) references to item data) in the list.
+    #[cfg(feature = "iter-mut")]
+    pub fn iter_with_tokens_mut(&mut self) -> IterWithTokensMut<T> {
+        let head = self.head;
+        IterWithTokensMut {
             list: self,
             next_item: head,
         }
@@ -811,12 +826,40 @@ impl<T> GenerationalTokenList<T> {
 }
 
 #[cfg(feature = "iter-mut")]
-pub struct IterMut<'a, T>
+pub struct IterWithTokensMut<'a, T>
 where
     T: 'a,
 {
     list: &'a mut GenerationalTokenList<T>,
     next_item: Option<ItemToken>,
+}
+
+#[cfg(feature = "iter-mut")]
+impl<'a, T> Iterator for IterWithTokensMut<'a, T>
+where
+    T: 'a,
+{
+    type Item = (ItemToken, &'a mut T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_item = self.next_item?;
+
+        self.list.arena.get_mut(next_item.index).map(|i| {
+            self.next_item = i.next;
+
+            #[cfg_attr(feature = "iter-mut", allow(unsafe_code))]
+            let data = unsafe { &mut *(&mut i.data as *mut T) };
+            (next_item, data)
+        })
+    }
+}
+
+#[cfg(feature = "iter-mut")]
+pub struct IterMut<'a, T>
+where
+    T: 'a,
+{
+    inner: IterWithTokensMut<'a, T>,
 }
 
 #[cfg(feature = "iter-mut")]
@@ -827,15 +870,30 @@ where
     type Item = &'a mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|d| d.1)
+    }
+}
+
+pub struct IterWithTokens<'a, T>
+where
+    T: 'a,
+{
+    list: &'a GenerationalTokenList<T>,
+    next_item: Option<ItemToken>,
+}
+
+impl<'a, T> Iterator for IterWithTokens<'a, T>
+where
+    T: 'a,
+{
+    type Item = (ItemToken, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
         let next_item = self.next_item?;
 
-        self.list.arena.get_mut(next_item.index).map(|i| {
+        self.list.arena.get(next_item.index).map(|i| {
             self.next_item = i.next;
-
-            #[cfg_attr(feature = "iter-mut", allow(unsafe_code))]
-            unsafe {
-                &mut *(&mut i.data as *mut T)
-            }
+            (next_item, &i.data)
         })
     }
 }
@@ -844,8 +902,7 @@ pub struct Iter<'a, T>
 where
     T: 'a,
 {
-    list: &'a GenerationalTokenList<T>,
-    next_item: Option<ItemToken>,
+    inner: IterWithTokens<'a, T>,
 }
 
 impl<'a, T> Iterator for Iter<'a, T>
@@ -855,12 +912,7 @@ where
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next_item = self.next_item?;
-
-        self.list.arena.get(next_item.index).map(|i| {
-            self.next_item = i.next;
-            &i.data
-        })
+        self.inner.next().map(|d| d.1)
     }
 }
 
