@@ -823,6 +823,55 @@ impl<T> GenerationalTokenList<T> {
     pub fn prev_token(&self, token: ItemToken) -> Option<ItemToken> {
         self.arena.get(token.index).unwrap().previous
     }
+
+    /// Returns the token corresponding to the item at position `pos`. Returns
+    /// `None` if `pos` is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use generational_token_list::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// let item1 = list.push_back(5);
+    /// let item2 = list.push_back(6);
+    /// let item3 = list.push_back(7);
+    ///
+    /// assert_eq!(list.token_at(0), Some(item1));
+    /// assert_eq!(list.token_at(1), Some(item2));
+    /// assert_eq!(list.token_at(2), Some(item3));
+    /// assert_eq!(list.token_at(3), None);
+    /// assert_eq!(list.token_at(4), None);
+    /// ```
+    pub fn token_at(&self, pos: usize) -> Option<ItemToken> {
+        self.iter_with_tokens().nth(pos).map(|ret| ret.0)
+    }
+
+    /// Returns the token corresponding to the item at position `pos` from the back. Returns
+    /// `None` if `pos` is invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use generational_token_list::GenerationalTokenList;
+    /// let mut list = GenerationalTokenList::<i32>::new();
+    /// let item1 = list.push_back(5);
+    /// let item2 = list.push_back(6);
+    /// let item3 = list.push_back(7);
+    ///
+    /// assert_eq!(list.token_at_back(0), Some(item3));
+    /// assert_eq!(list.token_at_back(1), Some(item2));
+    /// assert_eq!(list.token_at_back(2), Some(item1));
+    /// assert_eq!(list.token_at_back(3), None);
+    /// assert_eq!(list.token_at_back(4), None);
+    /// ```
+    pub fn token_at_back(&self, pos: usize) -> Option<ItemToken> {
+        if pos >= self.len() {
+            return None;
+        }
+
+        // TODO: implement DoubleEndedIterator and use that instead
+        self.token_at(self.len() - pos - 1)
+    }
 }
 
 #[cfg(feature = "iter-mut")]
