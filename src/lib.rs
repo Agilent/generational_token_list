@@ -1381,6 +1381,7 @@ mod tests {
         assert_eq!(iter.next(), None);
     }
 
+    #[cfg(feature = "iter-mut")]
     #[test]
     fn iter_with_tokens_mut() {
         let mut list = GenerationalTokenList::<i32>::new();
