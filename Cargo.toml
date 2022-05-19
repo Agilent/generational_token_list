@@ -23,4 +23,4 @@ iter-mut = []
 generational-arena = "0.2.8"
 
 [dev-dependencies]
-pretty_assertions = "1.0.0"
+pretty_assertions = "1.2.1"
