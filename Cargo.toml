@@ -1,6 +1,6 @@
 [package]
 name = "generational_token_list"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 readme = "README.md"
 repository = "https://github.com/Agilent/generational_token_list"
