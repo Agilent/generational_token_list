@@ -153,7 +153,11 @@ impl<T> GenerationalTokenList<T> {
     /// assert_eq!(list.head(), Some(&"WAT"));
     /// ```
     pub fn head_mut(&mut self) -> Option<&mut T> {
-        self.head.map(|token| self.get_mut(token).unwrap())
+        if let Some(token) = self.head {
+            self.get_mut(token)
+        } else {
+            None
+        }
     }
 
     /// Returns a reference to the last item in the list, or `None` if list is empty.
@@ -184,7 +188,11 @@ impl<T> GenerationalTokenList<T> {
     /// assert_eq!(list.tail(), Some(&"WAT"));
     /// ```
     pub fn tail_mut(&mut self) -> Option<&mut T> {
-        self.tail.map(|token| self.get_mut(token).unwrap())
+        if let Some(token) = self.tail {
+            self.get_mut(token)
+        } else {
+            None
+        }
     }
 
     /// Returns the token corresponding to first item in the list, or `None` if list is empty.
@@ -893,13 +901,15 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         let next_item = self.next_item?;
 
-        self.list.arena.get_mut(next_item.index).map(|i| {
-            self.next_item = i.next;
+        if let Some(item) = self.list.arena.get_mut(next_item.index) {
+            self.next_item = item.next;
 
             #[cfg_attr(feature = "iter-mut", allow(unsafe_code))]
-            let data = unsafe { &mut *(&mut i.data as *mut T) };
-            (next_item, data)
-        })
+            let data = unsafe { &mut *(&mut item.data as *mut T) };
+            Some((next_item, data))
+        } else {
+            None
+        }
     }
 }
 
